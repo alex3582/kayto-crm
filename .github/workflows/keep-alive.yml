@@ -1,0 +1,32 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    - cron: '0 0 */4 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Supabase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send keep-alive ping
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          echo "Pinging Supabase at $(date)..."
+          RESPONSE=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            --request GET \
+            "$SUPABASE_URL/rest/v1/" \
+            --header "apikey: $SUPABASE_ANON_KEY" \
+            --header "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "Response status: $RESPONSE"
+          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 300 ]; then
+            echo "Supabase is alive and responding."
+          else
+            echo "Unexpected response: $RESPONSE"
+            exit 1
+          fi
+      - name: Log completion
+        run: echo "Keep-alive ping completed at $(date). Next run in 4 days."
