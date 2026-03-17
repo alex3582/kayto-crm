@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────────
+# Kayto Tech CRM — Supabase Keep-Alive
+# Fires a lightweight ping to the Supabase database every 4 days
+# to prevent the free tier from pausing after 7 days of inactivity.
+# ─────────────────────────────────────────────────────────────────
+
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Runs at 08:00 AWST (UTC+8) every 4 days
+    # Cron runs in UTC — 00:00 UTC = 08:00 Perth time
+    - cron: '0 0 */4 * *'
+
+  # Allow manual trigger from the GitHub Actions tab if needed
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Supabase
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send keep-alive ping
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          echo "Pinging Supabase at $(date)..."
+
+          RESPONSE=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            --request GET \
+            "$SUPABASE_URL/rest/v1/" \
+            --header "apikey: $SUPABASE_ANON_KEY" \
+            --header "Authorization: Bearer $SUPABASE_ANON_KEY")
+
+          echo "Response status: $RESPONSE"
+
+          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 300 ]; then
+            echo "✅ Supabase is alive and responding."
+          else
+            echo "⚠️  Unexpected response code: $RESPONSE"
+            exit 1
+          fi
+
+      - name: Log completion
+        run: echo "Keep-alive ping completed at $(date). Next run in 4 days."
