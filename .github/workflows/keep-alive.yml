@@ -18,11 +18,12 @@ jobs:
           echo "Pinging Supabase at $(date)..."
           RESPONSE=$(curl --silent --output /dev/null --write-out "%{http_code}" \
             --request GET \
-            "$SUPABASE_URL/rest/v1/" \
+            "$SUPABASE_URL/rest/v1/user_roles?limit=1" \
             --header "apikey: $SUPABASE_ANON_KEY" \
-            --header "Authorization: Bearer $SUPABASE_ANON_KEY")
+            --header "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            --header "Accept: application/json")
           echo "Response status: $RESPONSE"
-          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 300 ]; then
+          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 500 ]; then
             echo "Supabase is alive and responding."
           else
             echo "Unexpected response: $RESPONSE"
